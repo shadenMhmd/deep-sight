@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Upload image</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='Pages.css') }}">
+
+</head>
+
+<body>
+
+ 
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-placeholder">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="mini-logo">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="user-controls">
+        <div class="user-info">
+           <span class="nameN">{{ session['doctor_name'] }}</span>
+                    <span class="user-title">{{ session['doctor_specialty'] }}</span>
+ 
+                </div>
+                
+                <div class="user-icon" id="userIcon">
+                  {% if session['doctor_name'] %}
+                  {{ session['doctor_name'].replace('Dr.', '').strip()[0] }}
+                  {% else %}
+                   D
+                  {% endif %}
+                </div>
+
+
+             <div class="dropdown-menu" id="userDropdown">
+                 <a href="{{ url_for('history') }}">Diagnosis History</a>
+                <a href="{{ url_for('support') }}">Support / Help</a>
+                <hr class="dropdown-separator">
+                <a href="{{ url_for('login') }}" class="logout-link">Log Out</a>
+            </div>
+        </div>
+    </header>
+<h1 class="system-title">DeepSight System</h1>
+
+
+<form id="mainForm" action="{{ url_for('upload_page') }}" method="POST" enctype="multipart/form-data" novalidate>
+    <div class="form-container">
+
+        <div class="image-section">
+            <p>Insert OCT Image Here</p>
+             <input id="uploadImage" name="uploadImage" type="file" accept="image/*" >
+             <label id='label' for='uploadImage'>
+             <i class="fas fa-cloud-upload-alt upload-icon"></i>
+             <span>Drag & Drop or Click to Upload</span>
+            </label>
+            <span id="imageError" class="error"></span>
+        </div>
+
+        <div class="patient-section">
+            <p>Enter Patient Information</p>
+
+            <div class="input-group">
+                <label for="pName">Patient Name</label>
+                <input id="pName" name='fname' type='text' placeholder='e.g., Ahmed Salah'>
+                <span id="nameError" class="error"></span>
+            </div>
+
+            <div class="input-group">
+                <label for="pId">Patient ID</label>
+                <input id="pId" name='id' type='text' placeholder='e.g., 123456'>
+                <span id="idError" class="error"></span>
+            </div>
+
+            <div class="input-group">
+                <label for="pGender">Gender</label>
+                <select id="pGender" name='gender'>
+                    <option value=''>Select Gender</option>
+                    <option value='Male'>Male</option>
+                    <option value='Female'>Female</option>
+                </select>
+                <span id="genderError" class="error"></span>
+            </div>
+
+            <div class="input-group">
+                <label for="pDate">Date of Birth</label>
+                <input id="pDate" name='dateOfBirth' type='date'>
+                <span id="dateError" class="error"></span>
+            </div>
+
+        </div>
+
+    </div>
+    <button type="submit">Start Diagnosis</button>
+</form>
+     <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+
+<script>
+  const form = document.querySelector("form");
+  const input = document.getElementById("uploadImage");
+  const box = document.getElementById("label");
+  const nameInput   = document.getElementsByName("fname")[0];
+  const idInput     = document.getElementsByName("id")[0];
+  const genderInput = document.getElementsByName("gender")[0];
+  const dateInput   = document.getElementsByName("dateOfBirth")[0];
+
+  const imageError  = document.getElementById("imageError");
+  const nameError   = document.getElementById("nameError");
+  const idError     = document.getElementById("idError");
+  const genderError = document.getElementById("genderError");
+  const dateError   = document.getElementById("dateError");
+
+  const ALLOWED_EXT = ["jpg","jpeg","png","gif","bmp","tif","tiff","webp","svg","heic","heif"];
+
+  function isValidImage(file){
+    if(!file) return false;
+    const okType = file.type && file.type.startsWith("image/"); // يتحقق من MIME
+    const name   = file.name || "";
+    const ext    = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+    const okExt  = ALLOWED_EXT.includes(ext);
+    return okType && okExt;
+  }
+
+  input.addEventListener("change", () => {
+    imageError.textContent = "";
+    const file = input.files && input.files[0];
+    if (!file) {
+      box.style.backgroundImage = "";
+      return;
+    }
+    if (!isValidImage(file)) {
+      imageError.textContent = "*Only image files are allowed (JPG, PNG, GIF, TIFF, WEBP, SVG, HEIC...)";
+      input.value = "";                
+      box.style.backgroundImage = "";   
+      return;
+    }
+    box.style.backgroundImage  = `url(${URL.createObjectURL(file)})`;
+    box.style.backgroundSize   = "contain";
+    box.style.backgroundPosition = "center";
+    box.style.backgroundRepeat = "no-repeat";
+    box.textContent = "";
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    imageError.textContent = nameError.textContent = idError.textContent =
+      genderError.textContent = dateError.textContent = "";
+
+    let valid = true;
+
+    const file1 = input.files && input.files[0];
+    if (!file1) {
+      imageError.textContent = "*Please insert an image";
+      valid = false;
+    } else if (!isValidImage(file1)) {
+      imageError.textContent = "*Only image files are allowed (JPG, PNG, GIF, TIFF, WEBP, SVG, HEIC...)";
+      input.value = "";
+      box.style.backgroundImage = "";
+      valid = false;
+    }
+
+    if (!nameInput.value.trim()) {
+      nameError.textContent = "*Please enter patient name";
+      valid = false;
+    } else if (!/^[A-Za-z\s]{1,50}$/.test(nameInput.value.trim())) {
+      nameError.textContent = "*Invalid input. Please enter letters and spaces only, up to 50 characters.";
+      valid = false;
+    }
+
+    if (!idInput.value.trim()) {
+      idError.textContent = "*Patient ID is required. Please enter a 10-digit number.";
+      valid = false;
+    } else if (!/^\d{10}$/.test(idInput.value.trim())) {
+      idError.textContent = "*Invalid input. Please enter numbers only, exactly 10 digits.";
+      valid = false;
+    }
+
+    if (!genderInput.value) {
+      genderError.textContent = "*Please select patient gender";
+      valid = false;
+    }
+
+    if (!dateInput.value.trim()) {
+      dateError.textContent = "*Please select date of birth";
+      valid = false;
+    } else if (new Date(dateInput.value) > new Date()) {
+      dateError.textContent = "*Date of birth cannot be in the future";
+      valid = false;
+    }
+
+    if (!valid) return;
+
+
+    HTMLFormElement.prototype.submit.call(form);
+  });
+</script>
+
+
+</body>
+</html>

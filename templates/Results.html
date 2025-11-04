@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Result Page</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='Pages.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+ 
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <div class="logo-placeholder">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="mini-logo">
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="user-controls">
+      <div class="user-info">
+         <span class="nameN">{{ session['doctor_name'] }}</span>
+                    <span class="user-title">{{ session['doctor_specialty'] }}</span>
+ 
+                </div>
+                
+                <div class="user-icon" id="userIcon">
+                  {% if session['doctor_name'] %}
+                  {{ session['doctor_name'].replace('Dr.', '').strip()[0] }}
+                  {% else %}
+                   D
+                  {% endif %}
+                </div>
+    <div class="dropdown-menu" id="userDropdown">
+      <a href="{{ url_for('history') }}">Diagnosis History</a>
+      <a href="{{ url_for('support') }}">Support / Help</a>
+      <hr class="dropdown-separator">
+      <a href="{{ url_for('login') }}" class="logout-link">Log Out</a>
+    </div>
+  </div>
+</header>
+<div id="middle">
+    <div id="resultBox">
+      {% if image_name %}
+        <img id="resultImg" src="{{ url_for('static', filename='uploads/' ~ image_name) }}" alt="OCT Image" style="max-width:420px;">
+      {% else %}
+        <span>No image</span>
+      {% endif %}
+    </div>
+
+    {% set v = (label or 'None') %}
+    {% set ok = (v|lower == 'normal') %}
+    <div id="result" style="background: {{ '#2f6b4a' if ok else '#b33939' }};">
+      {{ v }}
+    </div>
+
+    <button class="report-button" onclick="window.location.href='{{ url_for('report') }}'">View report</button>
+ 
+  </div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

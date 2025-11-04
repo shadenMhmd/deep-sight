@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Diagnostic Report</title>
+
+  <!-- CSS من static -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='Pages.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-placeholder">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="mini-logo">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="user-controls">
+        <div class="user-info">
+           <span class="nameN">{{ session['doctor_name'] }}</span>
+                    <span class="user-title">{{ session['doctor_specialty'] }}</span>
+ 
+                </div>
+                
+                <div class="user-icon" id="userIcon">
+                  {% if session['doctor_name'] %}
+                  {{ session['doctor_name'].replace('Dr.', '').strip()[0] }}
+                  {% else %}
+                   D
+                  {% endif %}
+                </div>
+
+
+      <div class="dropdown-menu" id="userDropdown">
+        <a href="{{ url_for('history') }}">Diagnosis History</a>
+        <a href="{{ url_for('support') }}">Support / Help</a>
+        <hr class="dropdown-separator">
+        <a href="{{ url_for('login') }}" class="logout-link">Log Out</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Report -->
+  <div id="reportArea" class="report-container">
+    <h1>Diabetic Maculopathy Diagnostic Report</h1>
+
+    <!-- Patient Info -->
+    <div class="section">
+      <h2>Patient Information</h2>
+      <table>
+
+
+        <tr>
+          <td><b>Name:</b></td>
+           <td>{{ report.patientName }}</td>
+        </tr>
+        <tr>
+          <td><b>ID:</b></td>
+          <td>{{ report.patientID }}</td>
+        </tr>
+        <tr>
+          <td><b>Date of Birth:</b></td>
+          <td id="resultDOB">{{ report.dob or "—" }}</td>
+        </tr>
+        <tr>
+          <td><b>Age:</b></td>
+          <td id="resultAge">—</td>        <!-- العمر نحسبه تحت -->
+        </tr>
+        <tr>
+          <td><b>Gender:</b></td>
+          <td id="resultGender">{{ report.gender or "—" }}</td>
+        </tr>
+        <tr>
+          <td><b>Date & Time of Scan:</b></td>
+          <td id="resultScanDateTime">—</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Diagnosis Summary -->
+    <div class="section">
+      <h2>Diagnosis Summary</h2>
+      <p class="highlight"><b>Result:</b> <span id="aiResult">{{ report.result}}</span></p>
+      <p><b>Confidence Score:</b> <span id="aiConfidence">{{ report.confidence or "—" }}</span>%</p>
+      <p><b>Reviewed By: </b><b id="assignedDr">{{ session.get('doctor_name','—') }}</b></p>
+
+    </div>
+
+    <!-- Imaging Results -->
+    <div class="section">
+      <h2>Imaging Results</h2>
+      <div class="image-row">
+        <div class="image-box">
+         {% if report.octImage %}
+          <img id="resultImage" src="{{ report.octImage }}" alt="OCT Scan"
+          style="max-width:400px;max-height:300px;display:block;margin:20px auto;">
+         {% else %}
+         <div style="text-align:center;color:#888;">No OCT image available</div>
+         {% endif %}
+         <p class="image-label">OCT Scan</p>
+        </div>
+
+ 
+
+
+
+
+
+
+
+        <div class="image-box">
+          <img id="heatmapImage" src="{{ report.heatmapUrl }}" alt="Heatmap" >
+
+          <p class="image-label">AI Heatmap</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap Interpretation -->
+    <div class="section">
+      <h2>Heatmap Interpretation</h2>
+      <p>The heatmap visualization highlights the regions that the AI model focused on during OCT scan analysis. Warmer colors (red, orange) indicate areas that had a higher influence on the model’s decision, while cooler colors (blue, green) show regions with less significance.</p>
+      <p id="heatmap_detail" class="heatmapSpecific">
+        {% if (report.result or '').upper() == 'DME' %}
+          In this case, warmer regions indicate areas of potential maculopathy, such as fluid accumulation or retinal thickening.
+        {% elif (report.result or '').upper() == 'NORMAL' %}
+          In this case, the heatmap shows no significant abnormalities, with cooler colors indicating normal retinal structures.
+        {% else %}
+          — Interpretation pending.
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="section">
+      <h2>Recommendations</h2>
+      <p id="recommendations">
+        {% if (report.result or '').upper() == 'DME' %}
+          Follow-up is essential in 3 months for further evaluation and treatment planning.
+        {% elif (report.result or '').upper() == 'NORMAL' %}
+          No further action is required at this time.
+        {% else %}
+          —
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Buttons -->
+    <div class="report-button">
+      <button onclick="downloadPDF()">Download Report (PDF)</button>
+      <button onclick="window.location.href='{{ url_for('upload_page') }}'">Back to Upload</button>
+      <button onclick="window.location.href='{{ url_for('starting') }}'">Back to Home</button>
+    </div>
+
+    <footer>
+      Report generated by <b>DeepSight System for Automated Dignosis of Diabetic Maculopathy</b> – Version 1.0
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+
+     const dob      = "{{ report.dob }}";
+     const scanTime = "{{ report.scan_time }}";
+
+     document.getElementById('resultDOB').textContent        = formatDate(dob);
+     document.getElementById('resultAge').textContent        = calculateAge(dob);
+     document.getElementById('resultScanDateTime').textContent = scanTime || "—";
+  
+    // تنزيل PDF
+    function downloadPDF() {
+      const element = document.getElementById("reportArea");
+      const buttons = document.querySelector(".report-button");
+      buttons.style.display = "none";
+
+      const style = document.createElement("style");
+      style.innerHTML = `
+        #reportArea { width: 95% !important; margin: 0 auto !important; padding: 10px 20px !important; }
+        #reportArea .section { margin-top: 12px !important; }
+        #reportArea h1 { font-size: 20px !important; margin-bottom: 15px !important; }
+        #reportArea .section h2 { font-size: 15px !important; margin-bottom: 6px !important; }
+        #reportArea table td { padding: 4px 6px !important; }
+        #reportArea .image-box img { max-width: 180px !important; max-height: 130px !important; object-fit: contain !important; }
+        #reportArea footer { margin-top: 10px !important; font-size: 11px !important; }
+      `;
+      document.head.appendChild(style);
+
+      html2pdf()
+        .set({
+          margin: [10,25,10,25],
+          filename: 'Diagnostic_Report.pdf',
+          image: { type:'jpeg', quality: 1 },
+          html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+          jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
+        })
+        .from(element)
+        .save()
+        .then(() => {
+          style.remove();
+          buttons.style.display = "block";
+        });
+    }
+     
+    function formatDate(d){
+    if(!d) return "—";
+    const dt = new Date(d);
+    if (isNaN(dt)) return "—";
+    const dd = String(dt.getDate()).padStart(2,'0');
+    const mm = String(dt.getMonth()+1).padStart(2,'0');
+    const yy = dt.getFullYear();
+    return `${dd}/${mm}/${yy}`;
+    }
+
+    function calculateAge(birthDateString) {
+            const today = new Date();
+            const birthDate = new Date(birthDateString);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            const dayDiff = today.getDate() - birthDate.getDate();
+            if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age--;
+            return age;
+        }
+   
+      
+      
+  </script>
+</body>
+</html>

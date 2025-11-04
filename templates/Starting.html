@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Welcome</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='Pages.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+	
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo-placeholder">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="mini-logo">
+
+            </div>
+            </div>
+
+        <div class="header-right">
+            <div class="user-controls">
+                <div class="user-info">
+                      <span class="nameN">{{ session['doctor_name'] }}</span>
+                    <span class="user-title">{{ session['doctor_specialty'] }}</span>
+ 
+                </div>
+                
+                <div class="user-icon" id="userIcon">
+                  {% if session['doctor_name'] %}
+                  {{ session['doctor_name'].replace('Dr.', '').strip()[0] }}
+                  {% else %}
+                   D
+                  {% endif %}
+                </div>
+            <div class="dropdown-menu" id="userDropdown">
+               
+                <a href="{{ url_for('history') }}">Diagnosis History</a>
+                <a href="{{ url_for('support') }}">Support / Help</a>
+                <hr class="dropdown-separator">
+                <a href="{{ url_for('login') }}" class="logout-link">Log Out</a>
+            </div>
+        </div>
+    </header>
+
+      <main class="page-content">
+            <div class="content-left">
+                <p class="welcome-title">Welcome to DeepSight</p>
+                   <h1 class="DM-title">
+                    Diabetic<br>
+                    Maculopathy<br>
+                    Detector
+                </h1>
+                <p class="subtitle">
+                    AI-powered retinal disease analysis<br>
+                    for ophthalmologists
+                </p>
+
+        <div class="Start-buttons">
+          
+           <a href="{{ url_for('upload_page') }}" class="button border">
+            <span class="icon">▶</span> Start Diagnosis
+          </a> 
+        </div>
+    </div>
+     <div class="Eyes-right">
+               <!-- <img src="Eyes icon.png" alt="Eyes icon " class="eye-Icon">-->
+              <img src="{{ url_for('static', filename='Eyes icon.png') }}" class="eye-Icon">
+
+            </div>
+        </main>
+        
+    </div>
+ <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"> 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnosis History - DeepSight</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='Pages.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo-placeholder">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="mini-logo">
+
+            </div>
+            </div>
+
+        <div class="header-right">
+            <div class="user-controls">
+                <div class="user-info">
+                      <span class="nameN">{{ session['doctor_name'] }}</span>
+                    <span class="user-title">{{ session['doctor_specialty'] }}</span>
+ 
+                </div>
+                
+                <div class="user-icon" id="userIcon">
+                  {% if session['doctor_name'] %}
+                  {{ session['doctor_name'].replace('Dr.', '').strip()[0] }}
+                  {% else %}
+                   D
+                  {% endif %}
+                </div>
+            <div class="dropdown-menu" id="userDropdown">
+               
+                <a href="{{ url_for('history') }}">Diagnosis History</a>
+                <a href="{{ url_for('support') }}">Support / Help</a>
+                <hr class="dropdown-separator">
+                <a href="{{ url_for('login') }}" class="logout-link">Log Out</a>
+            </div>
+        </div>
+    </header>
+    
+  <div class="dashboard-layout">
+    <main class="main-content">
+      <h1 class="page-header"><i class="fas fa-history"></i> Diagnosis History</h1>
+      
+      <div class="search-controls">
+        <div class="search-input-group">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="patient-id-search" placeholder="Search by Patient ID..." onkeyup="filterTable()">
+        </div>
+      </div>
+      
+      <div class="table-container">
+        <table class="history-table" id="history-table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Patient Name</th>
+              <th>Patient ID</th>
+              <th>Doctor Name</th>
+              <th>Scan Time & Date</th>
+              <th class="result-header">Result</th>
+              <th>Report</th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            <!-- سيتم تعبئته ديناميكياً من السيرفر -->
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="button-center-container">
+        <button class="back-button" onclick="window.location.href='{{ url_for('starting') }}';">
+          <i class="fas fa-arrow-left"></i> Back to Main
+        </button>
+      </div>
+    </main>
+  </div>
+
+ <script>
+        // عند تحميل الصفحة
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch("/get_history")
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById("history-body");
+                    tbody.innerHTML = "";
+
+                    data.forEach((item, index) => {
+                        const row = document.createElement("tr");
+                        row.classList.add("analysis-row", item.result.toLowerCase());
+
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${item.patient_name}</td>
+                            <td>${item.Patient_ID}</td>
+                            <td>${item.doctor_name}</td>
+                            <td>${item.scan_datetime}</td>
+                            <td class="result-badge ${item.result}">${item.result}</td>
+                            <td><i class="fas fa-download download-icon" onclick="downloadReport('${item.report_filename}')"></i></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(err => console.error("Error fetching history:", err));
+        });
+
+        function downloadReport(filename) {
+            if (!filename) {
+                alert("No report file available.");
+                return;
+            }
+             window.location.href = '/download_report/' + encodeURIComponent(filename);
+           
+        }
+
+        function filterTable() {
+            let input = document.getElementById("patient-id-search");
+            let filter = input.value.toUpperCase();
+            let table = document.getElementById("history-table");
+            let tr = table.getElementsByTagName("tr");
+            
+            for (let i = 1; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName("td")[2]; 
+                if (td) {
+                    let txtValue = td.textContent || td.innerText;
+                    tr[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+                }       
+            }
+        }
+    </script>
+
+</body>
+</html>
